@@ -14,6 +14,7 @@ var imgConf ImageConfig
 
 func main() {
 	parseImageConfigArgs()
+  getLocations()
 }
 
 func parseImageConfigArgs() {
