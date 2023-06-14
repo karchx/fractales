@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -12,8 +14,29 @@ import (
 	"golang.org/x/net/html"
 )
 
-func getLocations() {
-	scrapeLocationsToJson()
+func getLocations() LocationFile {
+	file, err := os.ReadFile(LocationFileJson)
+	if err != nil {
+		if os.IsNotExist(err) {
+			scrapeLocationsToJson()
+		} else {
+			panic(err)
+		}
+	}
+
+	locs := LocationFile{}
+	_ = json.Unmarshal([]byte(file), &locs)
+
+	zoom1Fractal := Location{
+		XCenter: -0.75,
+		YCenter: 0,
+		Zoom:    1,
+	}
+
+	locs.Locations = append(locs.Locations, zoom1Fractal)
+
+	log.Infof("Found %v locations.", len(locs.Locations))
+	return locs
 }
 
 func scrapeLocationsToJson() {
@@ -22,7 +45,7 @@ func scrapeLocationsToJson() {
 	}
 
 	log.Info("Getting response...")
-	resp, err := client.Get("http://www.cuug.ab.ca/dewara/mandelbrot/images/images.html")
+	resp, err := client.Get(UrlScapper)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,10 +53,20 @@ func scrapeLocationsToJson() {
 
 	log.Info("Parsing HTML...")
 
-	parseHTML(resp.Body)
+	locFile := parseHTML(resp.Body)
+
+	log.Info("Writing location data to JSON...")
+	res, err := json.MarshalIndent(locFile, "", " ")
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		_ = os.WriteFile(LocationFileJson, res, 0644)
+	}
+
+	log.Info("Scraping location data successfull.")
 }
 
-func parseHTML(body io.Reader) {
+func parseHTML(body io.Reader) LocationFile {
 	htmlTokens := html.NewTokenizer(body)
 
 	locFile := LocationFile{}
@@ -59,8 +92,7 @@ func parseHTML(body io.Reader) {
 
 		}
 	}
-
-	log.Info(locFile)
+	return locFile
 }
 
 func parseTextToken(text string, currLoc *Location) {
