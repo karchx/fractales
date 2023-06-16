@@ -69,6 +69,12 @@ func renderImage(img *image.RGBA, loc Location) {
       }
     }()
 	}
+
+  for y := 0; y < imgConf.Height; y++ {
+    jobs <- y
+    log.Infof("\r%d%d (%d%%)", y, imgConf.Height, int(100*(float64(y)/float64(imgConf.Height))))
+  }
+  log.Infof("\r%d/%[1]d (100%%)\n", imgConf.Height)
 }
 
 func renderRow(loc Location, y int, img *image.RGBA, rndLocal *uint64) {
