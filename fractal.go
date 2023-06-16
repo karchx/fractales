@@ -11,6 +11,7 @@ type LocationFile struct {
 }
 
 type ImageConfig struct {
-	Width  int
-	Height int
+	Width     int
+	Height    int
+	RngGlobal uint64
 }
