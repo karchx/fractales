@@ -11,7 +11,12 @@ type LocationFile struct {
 }
 
 type ImageConfig struct {
-	Width     int
-	Height    int
-	RngGlobal uint64
+	Width       int
+	Height      int
+	Samples     int
+	MaxInter    int
+	HueOffset   float64
+	Mixing      bool
+	InsideBlack bool
+	RngGlobal   uint64
 }
