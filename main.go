@@ -89,12 +89,46 @@ func renderImage(img *image.RGBA, loc Location) {
 
 func renderRow(loc Location, y int, img *image.RGBA, rndLocal *uint64) {
 	for x := 0; x < imgConf.Width; x++ {
-		img.SetRGBA(x, y, color.RGBA{R: 0, G: 0, B: 0, A: 255})
+    cr, cg, cb := getColorForPixel(loc, x, y, rndLocal)
+		img.SetRGBA(x, y, color.RGBA{R: cr, G: cg, B: cb, A: 255})
 	}
 }
 
-/*func getColorForPixel(loc Location, x int, y int, rndLocal *uint64) (uint8, uint8, uint8) {
+func getColorForPixel(loc Location, x int, y int, rndLocal *uint64) (uint8, uint8, uint8) {
   var r, g, b int
 
-  for i := 0; i < imgConf.Samples
-}*/
+  for i := 0; i < imgConf.Samples; i++ {
+    c := getColorForComplexNr(convertPixelComplexNr(loc, x, y, rndLocal))
+
+    if imgConf.Mixing {
+      r += int(RGBToLinear(c.R))
+      g += int(RGBToLinear(c.G))
+      b += int(RGBToLinear(c.B))
+    } else {
+      r += int(c.R)
+      g += int(c.G)
+      b += int(c.B)
+    }
+  }
+
+  var cr, cg, cb uint8
+  if imgConf.Mixing {
+    cr = LinearToRGB(uint16(float64(r) / float64(imgConf.Samples)))
+    cg = LinearToRGB(uint16(float64(g) / float64(imgConf.Samples)))
+    cb = LinearToRGB(uint16(float64(b) / float64(imgConf.Samples)))
+  } else {
+    cr = uint8(uint16(float64(r) / float64(imgConf.Samples)))
+    cg = uint8(uint16(float64(g) / float64(imgConf.Samples)))
+    cb = uint8(uint16(float64(b) / float64(imgConf.Samples)))
+  }
+
+  return cr, cg, cb
+}
+
+func convertPixelComplexNr(loc Location, x int, y int, rndLocal *uint64) complex128 {
+  ratio := float64(imgConf.Width) / float64(imgConf.Height)
+
+  nx := (1/loc.Zoom)*ratio*((float64(x)+RandFloat64(rndLocal))/float64(imgConf.Width)-0.5) + loc.XCenter
+  ny := (1/loc.Zoom)*ratio*((float64(y)+RandFloat64(rndLocal))/float64(imgConf.Height)-0.5) - loc.YCenter
+  return complex(nx, ny)
+}
